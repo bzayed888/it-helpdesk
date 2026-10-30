@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Users{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Users &amp; roles</h1><p class="muted">Employees open tickets. Agents work the queue. Admins also manage roles.</p></div></div>
+<div class="card table-card">
+<table class="table">
+  <thead><tr><th>Name</th><th>Department</th><th class="num">Tickets opened</th><th class="num">Assigned (open)</th><th>Role</th></tr></thead>
+  <tbody>
+  {% for u in users %}
+  <tr>
+    <td><strong>{{ u.name }}</strong><small class="block muted">{{ u.email }}</small></td>
+    <td>{{ u.department }}</td>
+    <td class="num">{{ u.submitted }}</td>
+    <td class="num">{{ u.assigned }}</td>
+    <td>
+      <form method="post" class="inline-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="user_id" value="{{ u.id }}">
+        <select name="role" onchange="this.form.submit()" {{ 'disabled' if u.id == g.user.id }}>
+          {% for r in roles %}<option value="{{ r }}" {{ 'selected' if u.role == r }}>{{ r|capitalize }}</option>{% endfor %}
+        </select>
+        <noscript><button class="btn btn-sm">Save</button></noscript>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Create account{% endblock %}
+{% block body_class %}auth{% endblock %}
+{% block content %}
+<div class="auth-card">
+  <div class="brand big"><span class="brand-mark">⌘</span> IT Helpdesk</div>
+  <h1>Create an account</h1>
+  <p class="muted">New accounts start as employees. An admin can make you an IT agent.</p>
+  <form method="post" class="form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Full name<input name="name" required value="{{ request.form.name }}"></label>
+    <label>Work email<input type="email" name="email" required value="{{ request.form.email }}"></label>
+    <label>Department<input name="department" placeholder="e.g. Finance" value="{{ request.form.department }}"></label>
+    <label>Password <small class="muted">(8+ characters)</small><input type="password" name="password" minlength="8" required autocomplete="new-password"></label>
+    <button class="btn btn-primary btn-block" type="submit">Create account</button>
+  </form>
+  <p class="muted small">Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
+</div>
+{% endblock %}

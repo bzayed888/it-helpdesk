@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, priority_badge, sla_badge %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Support dashboard</h1><p class="muted">Live view of the IT queue and how the team is tracking against SLA.</p></div>
+</div>
+
+<div class="kpis">
+  <a class="kpi" href="{{ url_for('tickets') }}"><span>Open tickets</span><strong>{{ kpi.open }}</strong><small>{{ kpi.unassigned }} unassigned</small></a>
+  <a class="kpi kpi-alert" href="{{ url_for('tickets') }}"><span>Overdue</span><strong>{{ kpi.overdue }}</strong><small>past their SLA target</small></a>
+  <div class="kpi"><span>Resolved, last 7 days</span><strong>{{ kpi.resolved_week }}</strong><small>tickets closed out</small></div>
+  <div class="kpi"><span>Avg. time to resolve</span><strong>{{ kpi.avg_hours }}<em>h</em></strong><small>all resolved tickets</small></div>
+  <div class="kpi"><span>SLA met</span><strong>{{ kpi.sla_met }}<em>%</em></strong><small>resolved on time</small></div>
+</div>
+
+<div class="charts">
+  <div class="card chart-card wide"><h3>Tickets opened vs. resolved per week</h3><div class="chart-box"><canvas id="weekly"></canvas></div></div>
+  <div class="card chart-card"><h3>Open tickets by priority</h3><div class="chart-box"><canvas id="priority"></canvas></div></div>
+  <div class="card chart-card"><h3>Tickets by category <small class="muted">(last 8 weeks)</small></h3><div class="chart-box"><canvas id="category"></canvas></div></div>
+  <div class="card chart-card"><h3>All tickets by status</h3><div class="chart-box"><canvas id="status"></canvas></div></div>
+</div>
+
+<div class="grid-2 dash-bottom">
+  <div class="card table-card">
+    <h3 class="pad">Due next</h3>
+    <table class="table">
+      <thead><tr><th>#</th><th>Ticket</th><th>Priority</th><th>Assignee</th><th>Due</th></tr></thead>
+      <tbody>
+      {% for t in urgent %}
+      <tr><td class="id">#{{ t.id }}</td><td class="title-cell"><a href="{{ url_for('ticket', tid=t.id) }}">{{ t.title }}</a></td><td>{{ priority_badge(t.priority) }}</td><td>{{ t.assignee or '—' }}</td><td class="due"><span class="nowrap">{{ t.due_at|ago }}</span> {{ sla_badge(t.sla) }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card table-card">
+    <h3 class="pad">Team workload</h3>
+    <table class="table">
+      <thead><tr><th>Agent</th><th class="num">Open now</th><th class="num">Resolved (30 days)</th></tr></thead>
+      <tbody>
+      {% for w in workload %}<tr><td>{{ w.name }}</td><td class="num">{{ w.open_n or 0 }}</td><td class="num">{{ w.resolved_n or 0 }}</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script>window.CHARTS = {{ charts|tojson }};</script>
+<script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+{% endblock %}

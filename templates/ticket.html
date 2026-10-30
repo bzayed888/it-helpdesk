@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, priority_badge, sla_badge %}
+{% block title %}#{{ t.id }} {{ t.title }}{% endblock %}
+{% block content %}
+<a class="back" href="{{ url_for('tickets') }}">← {{ 'Queue' if is_staff else 'My tickets' }}</a>
+<div class="page-head">
+  <div>
+    <h1><span class="muted">#{{ t.id }}</span> {{ t.title }}</h1>
+    <p class="badges">{{ status_badge(t.status) }} {{ priority_badge(t.priority) }} {{ sla_badge(sla) }} <span class="muted small">{{ t.category }}</span></p>
+  </div>
+</div>
+
+<div class="ticket-layout">
+  <section>
+    <article class="card post">
+      <header><span class="avatar">{{ t.requester[:1] }}</span><div><strong>{{ t.requester }}</strong><small class="muted">{{ t.department }} · {{ t.created_at|when }}</small></div></header>
+      <div class="body">{{ t.description }}</div>
+    </article>
+
+    <h2 id="comments" class="section-title">Conversation <span class="muted">({{ comments|length }})</span></h2>
+    {% for c in comments %}
+    <article class="card post {{ 'internal' if c.internal }} {{ 'staff' if c.author_role != 'employee' }}">
+      <header><span class="avatar">{{ c.author[:1] }}</span><div><strong>{{ c.author }}</strong>{% if c.author_role != 'employee' %}<span class="tag">IT</span>{% endif %}{% if c.internal %}<span class="tag tag-internal">Internal note</span>{% endif %}<small class="muted">{{ c.created_at|when }}</small></div></header>
+      <div class="body">{{ c.body }}</div>
+    </article>
+    {% else %}
+    <p class="muted">No replies yet.</p>
+    {% endfor %}
+
+    {% if t.status != 'Closed' %}
+    <form class="card form" method="post" action="{{ url_for('comment', tid=t.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>Add a reply<textarea name="body" rows="4" required placeholder="{{ 'Reply to the requester, or tick Internal note for IT only.' if is_staff else 'Add details or answer IT\'s question.' }}"></textarea></label>
+      <div class="form-foot">
+        {% if is_staff %}<label class="check"><input type="checkbox" name="internal" value="1"> Internal note (hidden from requester)</label>{% else %}<span></span>{% endif %}
+        <button class="btn btn-primary" type="submit">Post reply</button>
+      </div>
+    </form>
+    {% endif %}
+  </section>
+
+  <aside>
+    <div class="card details">
+      <h3>Details</h3>
+      <dl>
+        <dt>Requester</dt><dd>{{ t.requester }}<small>{{ t.requester_email }}</small></dd>
+        <dt>Assignee</dt><dd>{{ t.assignee or 'Unassigned' }}</dd>
+        <dt>Opened</dt><dd>{{ t.created_at|when }}</dd>
+        <dt>Due ({{ SLA_HOURS[t.priority] }}h SLA)</dt><dd>{{ t.due_at|when }}</dd>
+        {% if t.resolved_at %}<dt>Resolved</dt><dd>{{ t.resolved_at|when }}</dd>{% endif %}
+        <dt>Last update</dt><dd>{{ t.updated_at|ago }}</dd>
+      </dl>
+    </div>
+
+    {% if is_staff %}
+    <form class="card form" method="post" action="{{ url_for('update_ticket', tid=t.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <h3>Update ticket</h3>
+      <label>Status<select name="status">{% for s in STATUSES %}<option {{ 'selected' if t.status == s }}>{{ s }}</option>{% endfor %}</select></label>
+      <label>Priority<select name="priority">{% for p in PRIORITIES %}<option {{ 'selected' if t.priority == p }}>{{ p }}</option>{% endfor %}</select></label>
+      <label>Assignee<select name="assignee_id"><option value="">Unassigned</option>{% for a in agents %}<option value="{{ a.id }}" {{ 'selected' if t.assignee_id == a.id }}>{{ a.name }}</option>{% endfor %}</select></label>
+      <button class="btn btn-primary btn-block" type="submit">Save changes</button>
+    </form>
+    {% endif %}
+
+    <div class="card">
+      <h3>History</h3>
+      <ol class="timeline">
+        {% for a in activity %}<li><strong>{{ a.actor }}</strong> {{ a.action }}<small>{{ a.created_at|when }}</small></li>{% endfor %}
+      </ol>
+    </div>
+  </aside>
+</div>
+{% endblock %}

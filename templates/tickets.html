@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, priority_badge, sla_badge %}
+{% block title %}{{ 'Queue' if is_staff else 'My tickets' }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ 'Ticket queue' if is_staff else 'My tickets' }}</h1>
+    <p class="muted">{{ tickets|length }} ticket{{ '' if tickets|length == 1 else 's' }} · sorted by priority, then due time</p>
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('new_ticket') }}">+ New ticket</a>
+</div>
+
+<form class="filters card" method="get">
+  <input type="search" name="q" value="{{ f.q }}" placeholder="Search title, description or #id">
+  <select name="status">
+    <option value="active" {{ 'selected' if f.status in ('', 'active') }}>Active</option>
+    <option value="all" {{ 'selected' if f.status == 'all' }}>All statuses</option>
+    {% for s in STATUSES %}<option {{ 'selected' if f.status == s }}>{{ s }}</option>{% endfor %}
+  </select>
+  <select name="priority"><option value="">Any priority</option>{% for p in PRIORITIES|reverse %}<option {{ 'selected' if f.priority == p }}>{{ p }}</option>{% endfor %}</select>
+  <select name="category"><option value="">Any category</option>{% for c in CATEGORIES %}<option {{ 'selected' if f.category == c }}>{{ c }}</option>{% endfor %}</select>
+  {% if is_staff %}
+  <select name="assignee">
+    <option value="">Anyone</option>
+    <option value="me" {{ 'selected' if f.assignee == 'me' }}>Assigned to me</option>
+    <option value="none" {{ 'selected' if f.assignee == 'none' }}>Unassigned</option>
+  </select>
+  {% endif %}
+  <button class="btn" type="submit">Filter</button>
+  <a class="link-btn" href="{{ url_for('tickets') }}">Reset</a>
+</form>
+
+{% if tickets %}
+<div class="card table-card">
+<table class="table">
+  <thead><tr>
+    <th>#</th><th>Ticket</th><th>Priority</th><th>Status</th>
+    {% if is_staff %}<th>Assignee</th>{% endif %}<th>Due</th>{% if is_staff %}<th></th>{% endif %}
+  </tr></thead>
+  <tbody>
+  {% for t in tickets %}
+  <tr class="{{ 'row-breached' if t.sla[0] == 'breached' and t.status not in ('Resolved','Closed') }}">
+    <td class="id">#{{ t.id }}</td>
+    <td class="title-cell">
+      <a href="{{ url_for('ticket', tid=t.id) }}">{{ t.title }}</a>
+      <small>{{ t.category }}{% if is_staff %} · {{ t.requester }}{% endif %} · opened {{ t.created_at|ago }}</small>
+    </td>
+    <td>{{ priority_badge(t.priority) }}</td>
+    <td>{{ status_badge(t.status) }}</td>
+    {% if is_staff %}<td>{{ t.assignee or '—' }}</td>{% endif %}
+    <td class="due">{% if t.status in ('Resolved','Closed') %}{{ sla_badge(t.sla) }}{% else %}<span class="nowrap">{{ t.due_at|ago }}</span> {{ sla_badge(t.sla) }}{% endif %}</td>
+    {% if is_staff %}<td>
+      {% if not t.assignee_id and t.status not in ('Resolved','Closed') %}
+      <form method="post" action="{{ url_for('take_ticket', tid=t.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="back" value="{{ request.full_path }}">
+        <button class="btn btn-sm" type="submit">Take</button>
+      </form>{% endif %}
+    </td>{% endif %}
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<div class="card empty">
+  <h3>No tickets here</h3>
+  <p class="muted">{{ 'Nothing matches these filters.' if is_staff else "You haven't opened any tickets that match. Something broken?" }}</p>
+  <a class="btn btn-primary" href="{{ url_for('new_ticket') }}">Open a ticket</a>
+</div>
+{% endif %}
+{% endblock %}

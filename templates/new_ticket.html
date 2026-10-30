@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}New ticket{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Open a ticket</h1><p class="muted">Tell IT what's wrong. The more detail, the faster the fix.</p></div></div>
+<div class="grid-2">
+  <form method="post" class="card form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Short summary<input name="title" maxlength="120" required placeholder="e.g. Laptop won't connect to office Wi-Fi" value="{{ form.title }}"></label>
+    <div class="row-2">
+      <label>Category<select name="category" required>{% for c in CATEGORIES %}<option {{ 'selected' if form.category == c }}>{{ c }}</option>{% endfor %}</select></label>
+      <label>Priority<select name="priority" required>{% for p in PRIORITIES %}<option {{ 'selected' if (form.priority or 'Medium') == p }}>{{ p }}</option>{% endfor %}</select></label>
+    </div>
+    <label>Details<textarea name="description" rows="7" required placeholder="What happened, when it started, any error messages, and what you've already tried.">{{ form.description }}</textarea></label>
+    <button class="btn btn-primary" type="submit">Submit ticket</button>
+  </form>
+  <aside class="card help">
+    <h3>Response targets</h3>
+    <p class="muted small">IT aims to resolve tickets within these times (SLA).</p>
+    <ul class="sla-list">
+      {% for p in PRIORITIES|reverse %}<li><span class="pri pri-{{ p|lower }}"><i></i>{{ p }}</span><strong>{{ SLA_HOURS[p] }} hours</strong></li>{% endfor %}
+    </ul>
+    <p class="muted small"><strong>Critical</strong> means many people can't work (e.g. email or network down). Please don't over-prioritize; it slows everyone down.</p>
+  </aside>
+</div>
+{% endblock %}

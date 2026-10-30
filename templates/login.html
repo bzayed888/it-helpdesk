@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Log in{% endblock %}
+{% block body_class %}auth{% endblock %}
+{% block content %}
+<div class="auth-card">
+  <div class="brand big"><span class="brand-mark">⌘</span> IT Helpdesk</div>
+  <h1>Log in</h1>
+  <p class="muted">Report an IT issue or work the support queue.</p>
+  <form method="post" class="form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Work email<input type="email" name="email" required autofocus autocomplete="username"></label>
+    <label>Password<input type="password" name="password" required autocomplete="current-password"></label>
+    <button class="btn btn-primary btn-block" type="submit">Log in</button>
+  </form>
+  <p class="muted small">New here? <a href="{{ url_for('register') }}">Create an account</a></p>
+  <div class="demo">
+    <strong>Demo accounts</strong> (password <code>demo1234</code>)
+    <span>admin@helpdesk.demo · Admin</span>
+    <span>sam@helpdesk.demo · IT agent</span>
+    <span>olivia@helpdesk.demo · Employee</span>
+  </div>
+</div>
+{% endblock %}
